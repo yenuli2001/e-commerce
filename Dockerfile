@@ -1,19 +1,18 @@
-# Use Node.js LTS version
-FROM node:18
+FROM node:16-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy files
 COPY package*.json ./
-RUN npm install
+
+RUN npm install --production
+
 COPY . .
 
 # Set environment variables
+ENV NODE_ENV=production
 ENV PORT=5000
 
 # Expose the port
 EXPOSE 5000
 
-# Start the server
 CMD ["node", "server.js"]

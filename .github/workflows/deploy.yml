@@ -1,0 +1,53 @@
+name: Build and Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run security scan with Snyk
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+    
+    - name: Login to ACR
+      uses: azure/docker-login@v1
+      with:
+        login-server: productcatalogacr.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} .
+        docker push productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
+    
+    - name: Deploy to Azure Container App
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        appSourcePath: ${{ github.workspace }}
+        acrName: productcatalogacr
+        acrUsername: ${{ secrets.ACR_USERNAME }}
+        acrPassword: ${{ secrets.ACR_PASSWORD }}
+        containerAppName: product-catalog-api
+        resourceGroup: ProductCatalogResourceGroup
+        imageToDeploy: productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
+        targetPort: 5000

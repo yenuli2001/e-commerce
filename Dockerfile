@@ -6,14 +6,12 @@ COPY package*.json ./
 
 RUN npm install --production
 
-# This line is critical - it copies all your files including server.js
 COPY . .
 
-# For debugging - list files to make sure server.js is there
-RUN ls -la
-
+# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV MONGO_URI=mongodb+srv://Yenuli:yenuli123@cluster0.rqcr7.mongodb.net/product-catalog?retryWrites=true&w=majority&appName=Cluster0
 
 EXPOSE 5000
 

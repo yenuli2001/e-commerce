@@ -15,4 +15,4 @@ ENV PORT=5000
 # Expose the port
 EXPOSE 5000
 
-CMD ["node", "server.js"]
+CMD ["node", "src/server.js"]

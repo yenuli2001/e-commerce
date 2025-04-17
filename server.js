@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const connectDB = require('./config/db');
+const connectDB = require('./src/config/db');
 
 
 // Load env vars
@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(cors());
 
 // Mount routes
-app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/products', require('./src/routes/productRoutes'));
 
 // Basic route for testing
 app.get('/', (req, res) => {

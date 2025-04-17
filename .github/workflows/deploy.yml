@@ -21,11 +21,6 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
     - name: Login to ACR
       uses: azure/docker-login@v1
       with:

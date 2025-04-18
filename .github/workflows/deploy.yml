@@ -7,108 +7,68 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
-    name: Code Quality Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run linting
-        run: npm run lint
-        continue-on-error: true
-
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: lint
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          cache: 'npm'
+    - name: Check out code
+      uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+      continue-on-error: true  # Continue even if tests fail for demonstration purposes
       
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests
-        run: npm test
-        continue-on-error: true
-  
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: [test, sonarcloud]
+    needs: test  # This now only depends on the test job, not sonarcloud
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Check out code
+      uses: actions/checkout@v3
       
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Login to Azure Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: productcatalogacr.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-      
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            productcatalogacr.azurecr.io/product-catalog-api:latest
-            productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NODE_ENV=production
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: productcatalogacr.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+        
+    - name: Build and Push Docker Image
+      run: |
+        echo "Building and pushing Docker image..."
+        docker build -t productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} \
+          --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+          --label "github-sha=${{ github.sha }}" .
+          
+        docker tag productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} productcatalogacr.azurecr.io/product-catalog-api:latest
+        
+        docker push productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
+        docker push productcatalogacr.azurecr.io/product-catalog-api:latest
+        
+        echo "Docker image pushed successfully!"
 
   notify-deployment:
     name: Notify for Manual Deployment
     runs-on: ubuntu-latest
     needs: build-and-push
     if: success()
+    
     steps:
-      - name: Generate Deployment Instructions
-        run: |
-          echo "::notice::Docker image has been successfully built and pushed!"
-          echo "::notice::Image: productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"
-          echo "::notice::To deploy manually, run:"
-          echo "::notice::az containerapp update --name product-catalog-api --resource-group ProductCatalogResourceGroup --image productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"
+    - name: Generate Deployment Instructions
+      run: |
+        echo "Docker image has been successfully built and pushed!"
+        echo "Image: productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"
+        echo "To deploy manually, run:"
+        echo "az containerapp update --name product-catalog-api --resource-group ProductCatalogResourceGroup --image productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"

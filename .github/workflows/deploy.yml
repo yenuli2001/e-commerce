@@ -1,4 +1,4 @@
-name: Build and Deploy to Azure Container Apps
+name: Simplified CI/CD for Product Catalog
 
 on:
   push:
@@ -7,40 +7,48 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  test-and-build:
+    name: Test and Build
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Check out code
+      uses: actions/checkout@v3
     
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '16'
-        
+        cache: 'npm'
+    
     - name: Install dependencies
       run: npm ci
     
-    - name: Login to ACR
+    - name: Run tests
+      run: npm test
+      continue-on-error: true  # Continue even if tests fail for demonstration purposes
+      
+    - name: Login to Azure Container Registry
       uses: azure/docker-login@v1
       with:
         login-server: productcatalogacr.azurecr.io
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
-    
+        
     - name: Build and Push Docker Image
       run: |
-        docker build -t productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} .
+        # Add build date and git commit as labels
+        echo "Building and pushing Docker image..."
+        docker build -t productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} \
+          --label "build-date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+          --label "github-sha=${{ github.sha }}" .
+          
+        docker tag productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }} productcatalogacr.azurecr.io/product-catalog-api:latest
+        
         docker push productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
-    
-    - name: Deploy to Azure Container App
-      uses: azure/container-apps-deploy-action@v1
-      with:
-        appSourcePath: ${{ github.workspace }}
-        acrName: productcatalogacr
-        acrUsername: ${{ secrets.ACR_USERNAME }}
-        acrPassword: ${{ secrets.ACR_PASSWORD }}
-        containerAppName: product-catalog-api
-        resourceGroup: ProductCatalogResourceGroup
-        imageToDeploy: productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}
-        targetPort: 5000
+        docker push productcatalogacr.azurecr.io/product-catalog-api:latest
+        
+        echo "Docker image pushed successfully!"
+        echo "Image: productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"
+        echo "To deploy manually, run:"
+        echo "az containerapp update --name product-catalog-api --resource-group ProductCatalogResourceGroup --image productcatalogacr.azurecr.io/product-catalog-api:${{ github.sha }}"

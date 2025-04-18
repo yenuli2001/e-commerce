@@ -15,4 +15,5 @@ ENV MONGO_URI=mongodb+srv://Yenuli:yenuli123@cluster0.rqcr7.mongodb.net/product-
 
 EXPOSE 5000
 
-CMD ["node", "server.js"]
+# Change this line to match your package.json
+CMD ["node", "src/server.js"]

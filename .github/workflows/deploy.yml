@@ -42,7 +42,6 @@ jobs:
             -Dsonar.sources=.
             -Dsonar.exclusions=node_modules/**,**/test/**,**/tests/**,coverage/**
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.analysis.mode=ci_only
 
   test:
     name: Test

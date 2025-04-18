@@ -46,7 +46,7 @@ jobs:
       
       - name: Run tests
         run: npm test
-        continue-on-error: true
+        continue-on-error: false
   
   sonarcloud:
     name: SonarCloud Analysis

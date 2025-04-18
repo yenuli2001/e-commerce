@@ -26,7 +26,7 @@ jobs:
     
     - name: Run tests
       run: npm test
-      continue-on-error: true  # Continue even if tests fail for demonstration purposes
+      continue-on-error: false  # Continue even if tests fail for demonstration purposes
       
     - name: Login to Azure Container Registry
       uses: azure/docker-login@v1

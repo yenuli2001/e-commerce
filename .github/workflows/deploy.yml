@@ -55,7 +55,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Important for SonarCloud to get full history
+          fetch-depth: 0  # Important for SonarCloud
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      # This step is to see if SonarCloud is configured correctly
+      - name: Debug SonarCloud configuration
+        run: |
+          echo "Project key: $(grep sonar.projectKey sonar-project.properties | cut -d= -f2)"
+          echo "Organization: $(grep sonar.organization sonar-project.properties | cut -d= -f2)"
+          echo "SONAR_TOKEN exists: ${{ secrets.SONAR_TOKEN != '' }}"
       
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master

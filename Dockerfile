@@ -11,8 +11,7 @@ COPY . .
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=5000
-ENV MONGO_URI=mongodb+srv://Yenuli:yenuli123@cluster0.rqcr7.mongodb.net/product-catalog?retryWrites=true&w=majority&appName=Cluster0
-
+ENV MONGO_URI=${MONGO_URI}
 EXPOSE 5000
 
 # Change this line to match your package.json

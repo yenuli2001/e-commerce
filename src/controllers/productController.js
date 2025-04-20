@@ -10,6 +10,7 @@ exports.getProducts = async (req, res) => {
       data: products,
     });
   } catch (error) {
+    console.error('Error fetching products:', error);
     res.status(500).json({
       success: false,
       error: 'Server Error',
@@ -34,6 +35,7 @@ exports.getProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
+    console.error('Error fetching product:', error);
     res.status(500).json({
       success: false,
       error: 'Server Error',
@@ -44,7 +46,19 @@ exports.getProduct = async (req, res) => {
 // Create new product
 exports.createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    // Extract fields from req.body for better security
+    const { name, description, price, category, imageUrl, stock } = req.body;
+    
+    // Create product with validated fields
+    const productData = {};
+    if (name) productData.name = name;
+    if (description) productData.description = description;
+    if (price !== undefined) productData.price = price;
+    if (category) productData.category = category;
+    if (imageUrl) productData.imageUrl = imageUrl;
+    if (stock !== undefined) productData.stock = stock;
+    
+    const product = await Product.create(productData);
     
     res.status(201).json({
       success: true,
@@ -59,6 +73,7 @@ exports.createProduct = async (req, res) => {
         error: messages,
       });
     } else {
+      console.error('Error creating product:', error);
       res.status(500).json({
         success: false,
         error: 'Server Error',
@@ -70,9 +85,21 @@ exports.createProduct = async (req, res) => {
 // Update product
 exports.updateProduct = async (req, res) => {
   try {
+    // Extract fields from req.body for better security
+    const { name, description, price, category, imageUrl, stock } = req.body;
+    
+    // Create update object with validated fields
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (price !== undefined) updateData.price = price;
+    if (category) updateData.category = category;
+    if (imageUrl) updateData.imageUrl = imageUrl;
+    if (stock !== undefined) updateData.stock = stock;
+    
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       {
         new: true,
         runValidators: true,
@@ -91,6 +118,7 @@ exports.updateProduct = async (req, res) => {
       data: product,
     });
   } catch (error) {
+    console.error('Error updating product:', error);
     res.status(500).json({
       success: false,
       error: 'Server Error',
@@ -115,6 +143,7 @@ exports.deleteProduct = async (req, res) => {
       data: {},
     });
   } catch (error) {
+    console.error('Error deleting product:', error);
     res.status(500).json({
       success: false,
       error: 'Server Error',

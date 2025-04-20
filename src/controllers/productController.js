@@ -1,5 +1,4 @@
 const Product = require('../models/product');
-const mongoose = require('mongoose');
 
 // Get all products
 exports.getProducts = async (req, res) => {
@@ -21,14 +20,6 @@ exports.getProducts = async (req, res) => {
 // Get single product
 exports.getProduct = async (req, res) => {
   try {
-    // Validate ID format
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid product ID format',
-      });
-    }
-    
     const product = await Product.findById(req.params.id);
     
     if (!product) {
@@ -53,41 +44,7 @@ exports.getProduct = async (req, res) => {
 // Create new product
 exports.createProduct = async (req, res) => {
   try {
-    // Extract and validate required fields
-    const { name, description, price, category, imageUrl, stock } = req.body;
-    
-    // Create a sanitized object with validated data
-    const productData = {};
-    if (name) productData.name = name;
-    if (description) productData.description = description;
-    
-    // Validate numerical fields
-    if (price !== undefined) {
-      const parsedPrice = Number(price);
-      if (isNaN(parsedPrice)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Price must be a valid number',
-        });
-      }
-      productData.price = parsedPrice;
-    }
-    
-    if (stock !== undefined) {
-      const parsedStock = Number(stock);
-      if (isNaN(parsedStock)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Stock must be a valid number',
-        });
-      }
-      productData.stock = parsedStock;
-    }
-    
-    if (category) productData.category = category;
-    if (imageUrl) productData.imageUrl = imageUrl;
-    
-    const product = await Product.create(productData);
+    const product = await Product.create(req.body);
     
     res.status(201).json({
       success: true,
@@ -113,51 +70,9 @@ exports.createProduct = async (req, res) => {
 // Update product
 exports.updateProduct = async (req, res) => {
   try {
-    // Validate ID format
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid product ID format',
-      });
-    }
-    
-    // Extract and validate fields
-    const { name, description, price, category, imageUrl, stock } = req.body;
-    
-    // Create a sanitized update object
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (description) updateData.description = description;
-    
-    // Validate numerical fields
-    if (price !== undefined) {
-      const parsedPrice = Number(price);
-      if (isNaN(parsedPrice)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Price must be a valid number',
-        });
-      }
-      updateData.price = parsedPrice;
-    }
-    
-    if (stock !== undefined) {
-      const parsedStock = Number(stock);
-      if (isNaN(parsedStock)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Stock must be a valid number',
-        });
-      }
-      updateData.stock = parsedStock;
-    }
-    
-    if (category) updateData.category = category;
-    if (imageUrl) updateData.imageUrl = imageUrl;
-    
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      req.body,
       {
         new: true,
         runValidators: true,
@@ -186,14 +101,6 @@ exports.updateProduct = async (req, res) => {
 // Delete product
 exports.deleteProduct = async (req, res) => {
   try {
-    // Validate ID format
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid product ID format',
-      });
-    }
-    
     const product = await Product.findByIdAndDelete(req.params.id);
     
     if (!product) {

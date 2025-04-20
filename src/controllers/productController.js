@@ -1,4 +1,5 @@
 const Product = require('../models/product');
+const mongoose = require('mongoose');
 
 // Get all products
 exports.getProducts = async (req, res) => {
@@ -21,6 +22,14 @@ exports.getProducts = async (req, res) => {
 // Get single product
 exports.getProduct = async (req, res) => {
   try {
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format',
+      });
+    }
+    
     const product = await Product.findById(req.params.id);
     
     if (!product) {
@@ -51,14 +60,30 @@ exports.createProduct = async (req, res) => {
     
     // Create product with validated fields
     const productData = {};
-    if (name) productData.name = name;
-    if (description) productData.description = description;
-    if (price !== undefined) productData.price = price;
-    if (category) productData.category = category;
-    if (imageUrl) productData.imageUrl = imageUrl;
-    if (stock !== undefined) productData.stock = stock;
     
-    const product = await Product.create(productData);
+    // Add string validation
+    if (name && typeof name === 'string') productData.name = name;
+    if (description && typeof description === 'string') productData.description = description;
+    if (category && typeof category === 'string') productData.category = category;
+    if (imageUrl && typeof imageUrl === 'string') productData.imageUrl = imageUrl;
+    
+    // Add numerical validation
+    if (price !== undefined) {
+      const numPrice = Number(price);
+      if (!isNaN(numPrice)) {
+        productData.price = numPrice;
+      }
+    }
+    
+    if (stock !== undefined) {
+      const numStock = Number(stock);
+      if (!isNaN(numStock)) {
+        productData.stock = numStock;
+      }
+    }
+    
+    // Create with a new object to avoid direct use of user input
+    const product = await Product.create({...productData});
     
     res.status(201).json({
       success: true,
@@ -85,21 +110,44 @@ exports.createProduct = async (req, res) => {
 // Update product
 exports.updateProduct = async (req, res) => {
   try {
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format',
+      });
+    }
+    
     // Extract fields from req.body for better security
     const { name, description, price, category, imageUrl, stock } = req.body;
     
     // Create update object with validated fields
     const updateData = {};
-    if (name) updateData.name = name;
-    if (description) updateData.description = description;
-    if (price !== undefined) updateData.price = price;
-    if (category) updateData.category = category;
-    if (imageUrl) updateData.imageUrl = imageUrl;
-    if (stock !== undefined) updateData.stock = stock;
+    
+    // Add string validation
+    if (name && typeof name === 'string') updateData.name = name;
+    if (description && typeof description === 'string') updateData.description = description;
+    if (category && typeof category === 'string') updateData.category = category;
+    if (imageUrl && typeof imageUrl === 'string') updateData.imageUrl = imageUrl;
+    
+    // Add numerical validation
+    if (price !== undefined) {
+      const numPrice = Number(price);
+      if (!isNaN(numPrice)) {
+        updateData.price = numPrice;
+      }
+    }
+    
+    if (stock !== undefined) {
+      const numStock = Number(stock);
+      if (!isNaN(numStock)) {
+        updateData.stock = numStock;
+      }
+    }
     
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      { $set: updateData }, // Use $set operator explicitly
       {
         new: true,
         runValidators: true,
@@ -129,6 +177,14 @@ exports.updateProduct = async (req, res) => {
 // Delete product
 exports.deleteProduct = async (req, res) => {
   try {
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format',
+      });
+    }
+    
     const product = await Product.findByIdAndDelete(req.params.id);
     
     if (!product) {

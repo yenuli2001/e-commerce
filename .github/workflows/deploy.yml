@@ -1,3 +1,4 @@
+# CI/CD pipeline
 name: CI/CD Pipeline for Product Catalog
 on:
   push:
